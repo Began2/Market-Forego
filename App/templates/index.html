@@ -463,6 +463,22 @@
                             style="width: 220px; padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-family: Inter, sans-serif; font-size: 13px; color: #1f1f1f; outline: none; background: #fafafa;">
                     </div>
 
+                    <!-- Environment row -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid #f0f0f0;">
+                        <div>
+                            <div style="font-size: 15px; font-weight: 500; color: #1f1f1f;">Account</div>
+                            <div style="font-size: 13px; color: #888; margin-top: 3px;">Live uses real money. Demo is paper trading.</div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <label id="envLive" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; color: #1f1f1f; background: #fafafa; transition: all 0.15s;">
+                                <input type="radio" name="env" value="live" style="accent-color: #1a73e8;"> Live
+                            </label>
+                            <label id="envDemo" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; color: #1f1f1f; background: #fafafa; transition: all 0.15s;">
+                                <input type="radio" name="env" value="demo" style="accent-color: #1a73e8;"> Demo
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Save row -->
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 0;">
                         <p id="saveMsg" style="font-size: 13px; color: #888; margin: 0;"></p>
@@ -965,7 +981,7 @@
                 fetch("/settings", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: "api_key=" + encodeURIComponent(key) + "&api_secret=" + encodeURIComponent(document.getElementById("apiSecretInput").value.trim())
+                    body: "api_key=" + encodeURIComponent(key) + "&api_secret=" + encodeURIComponent(document.getElementById("apiSecretInput").value.trim()) + "&env=" + encodeURIComponent(document.querySelector('input[name="env"]:checked') ? document.querySelector('input[name="env"]:checked').value : "live")
                 }).then(function(res) {
                     if (res.ok) {
                         msg.textContent = "Key saved.";
@@ -977,6 +993,20 @@
                 });
             });
         }
+
+        // highlight selected env radio
+        document.querySelectorAll('input[name="env"]').forEach(function(radio) {
+            radio.addEventListener("change", function() {
+                document.querySelectorAll('input[name="env"]').forEach(function(r) {
+                    r.closest("label").style.borderColor = "#e0e0e0";
+                    r.closest("label").style.background = "#fafafa";
+                    r.closest("label").style.color = "#1f1f1f";
+                });
+                radio.closest("label").style.borderColor = "#1a73e8";
+                radio.closest("label").style.background = "#e8f0fe";
+                radio.closest("label").style.color = "#1a73e8";
+            });
+        });
     </script>
 </body>
 </html>

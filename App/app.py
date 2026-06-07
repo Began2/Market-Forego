@@ -1,3 +1,4 @@
+import requests
 import json
 from flask import Flask, render_template, request, abort
 from main import run_backtest
@@ -14,7 +15,7 @@ def whitelist():
 def settings():
     if request.method == "POST":
         with open("config.json","w") as f:
-            json.dump({"api_key": request.form["api_key"],"api_secret": request.form["api_secret"]},f)
+            json.dump({"api_key": request.form["api_key"],"api_secret": request.form["api_secret"],"env": request.form["env"]},f)
         return "saved"
     if request.method == "GET":
         try:
