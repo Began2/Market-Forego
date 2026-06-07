@@ -440,9 +440,17 @@
         <div class="page" id="page-settings">
             <h1>Settings</h1>
             <p style="color: #888; margin-top: 4px; margin-bottom: 32px;">Application settings</p>
-            <div class="empty-page">
-                <i class="fa-solid fa-gear"></i>
-                <p>Settings coming soon</p>
+            <div class="card" style="max-width: 480px;">
+                <div class="card-label">Trading 212 API Key</div>
+                <form method="POST" action="/settings" style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px;">
+                    <input type="text" name="api_key" id="apiKeyInput" placeholder="Paste your API key here"
+                        style="padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-family: Inter, sans-serif; font-size: 14px; color: #1f1f1f; outline: none; width: 100%;">
+                    <button type="submit"
+                        style="padding: 10px 20px; background: #1a73e8; color: #fff; border: none; border-radius: 8px; font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; align-self: flex-start;">
+                        Save
+                    </button>
+                </form>
+                <p id="saveMsg" style="margin-top: 10px; font-size: 13px; color: #888;"></p>
             </div>
         </div>
 
@@ -924,6 +932,29 @@
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(function() { chart.resize(); }, 100);
         });
+
+        // settings form — save without page reload
+        const settingsForm = document.querySelector("#page-settings form");
+        if (settingsForm) {
+            settingsForm.addEventListener("submit", function(e) {
+                e.preventDefault();
+                const key = document.getElementById("apiKeyInput").value.trim();
+                const msg = document.getElementById("saveMsg");
+                fetch("/settings", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "api_key=" + encodeURIComponent(key)
+                }).then(function(res) {
+                    if (res.ok) {
+                        msg.textContent = "Key saved.";
+                        msg.style.color = "#1a73e8";
+                    } else {
+                        msg.textContent = "Failed to save.";
+                        msg.style.color = "#e00";
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>
