@@ -441,10 +441,18 @@
             <h1>Settings</h1>
             <p style="color: #888; margin-top: 4px; margin-bottom: 32px;">Application settings</p>
             <div class="card" style="max-width: 480px;">
-                <div class="card-label">Trading 212 API Key</div>
+                <div class="card-label">Trading 212 Credentials</div>
                 <form method="POST" action="/settings" style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px;">
-                    <input type="text" name="api_key" id="apiKeyInput" placeholder="Paste your API key here"
-                        style="padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-family: Inter, sans-serif; font-size: 14px; color: #1f1f1f; outline: none; width: 100%;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 600; color: #888;">API Key</label>
+                        <input type="text" name="api_key" id="apiKeyInput" placeholder="Paste your API key"
+                            style="padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-family: Inter, sans-serif; font-size: 14px; color: #1f1f1f; outline: none; width: 100%;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 600; color: #888;">API Secret</label>
+                        <input type="password" name="api_secret" id="apiSecretInput" placeholder="Paste your API secret"
+                            style="padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-family: Inter, sans-serif; font-size: 14px; color: #1f1f1f; outline: none; width: 100%;">
+                    </div>
                     <button type="submit"
                         style="padding: 10px 20px; background: #1a73e8; color: #fff; border: none; border-radius: 8px; font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; align-self: flex-start;">
                         Save
@@ -943,7 +951,7 @@
                 fetch("/settings", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: "api_key=" + encodeURIComponent(key)
+                    body: "api_key=" + encodeURIComponent(key) + "&api_secret=" + encodeURIComponent(document.getElementById("apiSecretInput").value.trim())
                 }).then(function(res) {
                     if (res.ok) {
                         msg.textContent = "Key saved.";

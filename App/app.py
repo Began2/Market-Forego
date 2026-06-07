@@ -20,9 +20,9 @@ def settings():
         try:
             with open("config.json") as f:
                 config = json.load(f)
-            return config["api_key","api_secret"]
+            return "Success"
         except FileNotFoundError:
-            return ""
+            return "Config file not found"
 
 @app.route("/")
 def index():
