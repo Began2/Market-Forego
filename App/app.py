@@ -14,13 +14,13 @@ def whitelist():
 def settings():
     if request.method == "POST":
         with open("config.json","w") as f:
-            json.dump({"api_key": request.form["api_key"]}, f)
+            json.dump({"api_key": request.form["api_key"],"api_secret": request.form["api_secret"]},f)
         return "saved"
     if request.method == "GET":
         try:
             with open("config.json") as f:
                 config = json.load(f)
-            return config["api_key"]
+            return config["api_key","api_secret"]
         except FileNotFoundError:
             return ""
 
