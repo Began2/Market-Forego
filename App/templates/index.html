@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forego</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            display: flex;
+            height: 100vh;
+            background-color: #f2f2f2;
+            color: #1f1f1f;
+            font-family: "Inter", "Segoe UI", sans-serif;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        #sidebar {
+            width: 260px;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 12px;
+            flex-shrink: 0;
+            border-right: 1px solid #e0e0e0;
+            transition: transform 0.25s ease;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        #sidebar h2 {
+            color: #1f1f1f;
+            font-size: 24px;
+            font-weight: 700;
+            padding: 8px 12px 20px 12px;
+            letter-spacing: 0.5px;
+        }
+
+        #sidebar ul { list-style: none; padding: 4px 0; }
+
+        #sidebar ul:last-child {
+            margin-top: auto;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 8px;
+        }
+
+        #sidebar li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 16px;
+            cursor: pointer;
+            color: #555555;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        #sidebar li:hover { background-color: #f2f2f2; color: #1f1f1f; }
+        #sidebar li.active { background-color: #e8f0fe; color: #1a73e8; }
+        #sidebar li i { width: 16px; text-align: center; }
+
+        /* MAIN */
+        #main {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            background-color: #f7f7f7;
+        }
+
+        #main h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1f1f1f;
+            margin-bottom: 8px;
+        }
+
+        /* TAB PAGES */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* CARDS */
+        .cards { display: flex; gap: 20px; flex-wrap: wrap; }
+
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px 28px;
+            min-width: 200px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .card-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .card-value { font-size: 32px; font-weight: 700; color: #1f1f1f; margin-bottom: 6px; }
+        .card-sub { font-size: 12px; color: #aaa; }
+
+        /* CHART CARD */
+        .chart-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px 28px;
+            border: 1px solid #e0e0e0;
+            margin-top: 24px;
+        }
+
+        .chart-card:fullscreen,
+        .chart-card:-webkit-full-screen {
+            background: #fff;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            width: 100vw;
+            height: 100vh;
+            border-radius: 0;
+        }
+
+        .chart-card:fullscreen #chart,
+        .chart-card:-webkit-full-screen #chart {
+            flex: 1;
+            max-height: none !important;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+
+        @media (max-width: 480px) {
+            .chart-wrapper { height: 260px; }
+        }
+
+        .chart-card:fullscreen .chart-wrapper,
+        .chart-card:-webkit-full-screen .chart-wrapper {
+            flex: 1;
+            height: auto;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f1f1f;
+        }
+
+        .chart-actions { display: flex; gap: 8px; align-items: center; }
+
+        .chart-btn {
+            background: #f2f2f2;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            color: #555;
+            font-family: "Inter", sans-serif;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .chart-btn:hover { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
+
+        .chart-btn[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f1f1f;
+            color: #fff;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* fullscreen close button */
+        #fsCloseBtn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #1f1f1f;
+            padding: 4px 8px;
+            font-family: "Inter", sans-serif;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .chart-card:fullscreen #fsCloseBtn,
+        .chart-card:-webkit-full-screen #fsCloseBtn { display: block; }
+
+        .chart-card:fullscreen #fsOpenBtn,
+        .chart-card:-webkit-full-screen #fsOpenBtn { display: none; }
+
+        /* HAMBURGER - mobile only, top right, no bg */
+        #hamburger {
+            display: none;
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 200;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: #1f1f1f;
+            padding: 4px;
+        }
+
+        #overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 99;
+        }
+
+        /* MOBILE */
+        @media (max-width: 480px) {
+            body { overflow: hidden; }
+
+            #sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                z-index: 100;
+                transform: translateX(-100%);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+            }
+
+            #sidebar.open { transform: translateX(0); }
+            #overlay.open { display: block; }
+            #hamburger { display: block; }
+
+            #main {
+                padding: 16px 16px 80px 16px;
+                overflow-y: auto;
+                height: 100vh;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .cards { flex-direction: column; margin-top: 52px; }
+
+            .chart-card {
+                cursor: pointer;
+                user-select: none;
+                touch-action: manipulation;
+            }
+
+            .chart-mobile-hint {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                color: #888;
+                font-size: 13px;
+                margin-top: 12px;
+            }
+
+            .chart-actions { display: none; }
+            #chartLegend { margin-bottom: 12px; }
+
+            .chart-card:fullscreen .chart-actions,
+            .chart-card:-webkit-full-screen .chart-actions { display: flex; }
+
+            .chart-card:fullscreen .chart-mobile-hint,
+            .chart-card:-webkit-full-screen .chart-mobile-hint { display: none; }
+        }
+
+        @media (min-width: 481px) {
+            .chart-mobile-hint { display: none; }
+        }
+
+        /* EMPTY PAGE */
+        .empty-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            color: #aaa;
+            gap: 12px;
+        }
+
+        .empty-page i { font-size: 48px; opacity: 0.3; }
+        .empty-page p { font-size: 15px; font-weight: 500; }
+
+        /* CUSTOM HTML LEGEND */
+        #chartLegend {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+            transition: color 0.15s;
+            user-select: none;
+        }
+
+        .legend-item.hidden {
+            color: #bbb;
+            text-decoration: line-through;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border-width: 2.5px;
+            border-style: solid;
+            background: #fff;
+            flex-shrink: 0;
+            transition: border-color 0.15s;
+        }
+
+        .legend-item.hidden .legend-dot {
+            border-color: #ccc !important;
+        }
+    </style>
+</head>
+<body>
+    <button id="hamburger" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+    <div id="overlay" onclick="toggleSidebar()"></div>
+
+    <div id="sidebar">
+        <h2>Forego</h2>
+        <ul>
+            <li class="active" onclick="showPage('portfolio', this)"><i class="fa-solid fa-chart-pie"></i> Portfolio</li>
+            <li onclick="showPage('backtesting', this)"><i class="fa-solid fa-flask"></i> Backtesting</li>
+            <li onclick="showPage('strategies', this)"><i class="fa-solid fa-sliders"></i> Strategies</li>
+            <li onclick="showPage('history', this)"><i class="fa-solid fa-clock-rotate-left"></i> History</li>
+        </ul>
+        <ul>
+            <li onclick="showPage('settings', this)"><i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+    </div>
+
+    <div id="main">
+
+        <!-- PORTFOLIO PAGE -->
+        <div class="page active" id="page-portfolio">
+            <h1>Portfolio</h1>
+            <p style="color: #888; margin-top: 4px; margin-bottom: 32px;">Your Trading 212 account</p>
+            <div class="empty-page">
+                <i class="fa-solid fa-chart-pie"></i>
+                <p>Portfolio coming soon</p>
+            </div>
+        </div>
+
+        <!-- BACKTESTING PAGE -->
+        <div class="page" id="page-backtesting">
+            <h1>Backtesting</h1>
+            <p style="color: #888; margin-top: 4px; margin-bottom: 32px;">Backtest results, SPY from 2020</p>
+            <div class="cards">
+                <div class="card">
+                    <div class="card-label">Your Strategy</div>
+                    <div class="card-value">&#8364;{{ "%.2f"|format(final_value) }}</div>
+                    <div class="card-sub">Starting from &#8364;10,000</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Buy &amp; Hold</div>
+                    <div class="card-value">&#8364;{{ "%.2f"|format(buyhold_value) }}</div>
+                    <div class="card-sub">Starting from &#8364;10,000</div>
+                </div>
+            </div>
+            <div class="chart-card" id="chartCard">
+                <div class="chart-header">
+                    <span class="chart-title">Portfolio Performance</span>
+                    <div class="chart-actions">
+                        <button class="chart-btn" data-tooltip="Reset to last 2 years" onclick="resetZoom()">Reset Zoom</button>
+                        <button id="fsOpenBtn" class="chart-btn" data-tooltip="Fullscreen" onclick="toggleFullscreen()"><i class="fa-solid fa-expand"></i></button>
+                        <button id="fsCloseBtn" onclick="toggleFullscreen()">&#x2715;</button>
+                    </div>
+                </div>
+                <div id="chartLegend"></div>
+                <div class="chart-wrapper">
+                    <canvas id="chart"></canvas>
+                </div>
+                <div class="chart-mobile-hint"><i class="fa-solid fa-expand"></i> Tap to expand chart</div>
+            </div>
+        </div>
+
+        <!-- STRATEGIES PAGE -->
+        <div class="page" id="page-strategies">
+            <h1>Strategies</h1>
+            <p style="color: #888; margin-top: 4px; margin-bottom: 32px;">Manage your trading strategies</p>
+            <div class="empty-page">
+                <i class="fa-solid fa-sliders"></i>
+                <p>Strategies coming soon</p>
+            </div>
+        </div>
+
+        <!-- HISTORY PAGE -->
+        <div class="page" id="page-history">
+            <h1>History</h1>
+            <p style="color: #888; margin-top: 4px; margin-bottom: 32px;">Trade history</p>
+            <div class="empty-page">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <p>History coming soon</p>
+            </div>
+        </div>
+
+        <!-- SETTINGS PAGE -->
+        <div class="page" id="page-settings">
+            <h1>Settings</h1>
+            <p style="color: #888; margin-top: 4px; margin-bottom: 32px;">Application settings</p>
+            <div class="empty-page">
+                <i class="fa-solid fa-gear"></i>
+                <p>Settings coming soon</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // PAGE NAVIGATION
+        function showPage(name, el) {
+            document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+            document.querySelectorAll("#sidebar li").forEach(li => li.classList.remove("active"));
+            document.getElementById("page-" + name).classList.add("active");
+            el.classList.add("active");
+            localStorage.setItem("activeTab", name);
+            if (window.innerWidth <= 480 && document.getElementById("sidebar").classList.contains("open")) {
+                toggleSidebar();
+            }
+        }
+
+        // restore last active tab on load
+        window.addEventListener("DOMContentLoaded", function() {
+            const saved = localStorage.getItem("activeTab");
+            if (saved) {
+                const li = document.querySelector('#sidebar li[onclick*="' + saved + '"]');
+                if (li) showPage(saved, li);
+            }
+        });
+
+        // SIDEBAR TOGGLE
+        function toggleSidebar() {
+            document.getElementById("sidebar").classList.toggle("open");
+            document.getElementById("overlay").classList.toggle("open");
+        }
+
+        // CHART DATA
+        const allDates = {{ dates | tojson }};
+        const allStrategy = {{ history | tojson }};
+        const allBuyhold = {{ buyhold_history | tojson }};
+
+        const twoYearDays = 504;
+        const mobileStartDays = 90;
+        const startIndex = Math.max(0, allDates.length - twoYearDays);
+        const mobileStartIndex = Math.max(0, allDates.length - mobileStartDays);
+        const isMobile = window.innerWidth <= 480;
+
+        // real data bounds, used to stop infinite freeroam
+        const allValues = allStrategy.concat(allBuyhold);
+        const dataMin = Math.min.apply(null, allValues);
+        const dataMax = Math.max.apply(null, allValues);
+        const pad = (dataMax - dataMin) * 0.05;
+        const yMin = dataMin - pad;
+        const yMax = dataMax + pad;
+
+        let crosshairX = null;
+        let mouseClientX = null;
+
+        const movingGridPlugin = {
+            id: "movingGrid",
+            afterDraw(chart) {
+                if (!chart.chartArea) return;
+                const ctx = chart.ctx;
+                const { left, right, top, bottom } = chart.chartArea;
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+
+                ctx.save();
+                ctx.strokeStyle = "rgba(0,0,0,0.07)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+
+                // horizontal lines anchored to Y data values
+                const yMin = yScale.min;
+                const yMax = yScale.max;
+                const yRange = yMax - yMin;
+                if (yRange > 0) {
+                    const mag = Math.pow(10, Math.floor(Math.log10(yRange / 5)));
+                    const step = Math.ceil((yRange / 5) / mag) * mag;
+                    const first = Math.ceil(yMin / step) * step;
+                    for (let v = first; v <= yMax + step * 0.01; v += step) {
+                        const py = yScale.getPixelForValue(v);
+                        if (py < top || py > bottom) continue;
+                        ctx.moveTo(left, py);
+                        ctx.lineTo(right, py);
+                    }
+                }
+
+                // vertical lines anchored to X data indices
+                const xMin = xScale.min;
+                const xMax = xScale.max;
+                const visibleCount = xMax - xMin;
+                if (visibleCount > 0) {
+                    // pick a "nice" step targeting ~12 lines
+                    const rawStep = visibleCount / 12;
+                    const niceSteps = [1, 2, 5, 7, 10, 14, 21, 30, 60, 90, 120, 180, 365, 730];
+                    let step = niceSteps[niceSteps.length - 1];
+                    for (let i = 0; i < niceSteps.length; i++) {
+                        if (niceSteps[i] >= rawStep) { step = niceSteps[i]; break; }
+                    }
+                    const first = Math.ceil(xMin / step) * step;
+                    for (let idx = first; idx <= xMax; idx += step) {
+                        const label = allDates[Math.round(idx)];
+                        if (!label) continue;
+                        const px = xScale.getPixelForValue(label);
+                        if (px < left || px > right) continue;
+                        ctx.moveTo(px, top);
+                        ctx.lineTo(px, bottom);
+                    }
+                }
+
+                ctx.stroke();
+                ctx.restore();
+            }
+        };
+
+        const crosshairPlugin = {
+            id: "crosshair",
+            afterDraw(chart) {
+                if (mouseClientX === null || !chart.chartArea) return;
+                const rect = chart.canvas.getBoundingClientRect();
+                const x = mouseClientX - rect.left;
+                if (x < chart.chartArea.left || x > chart.chartArea.right) return;
+                const ctx = chart.ctx;
+                const top = chart.chartArea.top;
+                const bottom = chart.chartArea.bottom;
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(x, top);
+                ctx.lineTo(x, bottom);
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = "rgba(80,80,80,0.4)";
+                ctx.setLineDash([4, 3]);
+                ctx.stroke();
+                ctx.restore();
+            }
+        };
+
+        const ctx = document.getElementById("chart").getContext("2d");
+        const chart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: allDates,
+                datasets: [
+                    {
+                        label: "Your Strategy",
+                        data: allStrategy,
+                        borderColor: "#1a73e8",
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0
+                    },
+                    {
+                        label: "Buy & Hold",
+                        data: allBuyhold,
+                        borderColor: "#e8710a",
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0
+                    }
+                ]
+            },
+            options: {
+                animation: false,
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { left: 0, right: 0, top: 4, bottom: 0 } },
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                    tooltip: {
+                        mode: "index",
+                        intersect: false,
+                        backgroundColor: "#1f1f1f",
+                        titleFont: { family: "Inter", size: 13, weight: "600" },
+                        bodyFont: { family: "Inter", size: 12 },
+                        padding: 12,
+                        usePointStyle: true,
+                        boxWidth: 7,
+                        boxHeight: 7,
+                        callbacks: {
+                            title: function(items) { return items[0].label; },
+                            label: function(item) {
+                                return "  " + item.dataset.label + ": €" + item.parsed.y.toFixed(2);
+                            },
+                            labelPointStyle: function() {
+                                return { pointStyle: "circle", rotation: 0 };
+                            }
+                        }
+                    },
+                    legend: { display: false },
+                    zoom: {
+                        limits: {
+                            x: { min: "original", max: "original", minRange: 20, maxRange: allDates.length }
+                        },
+                        zoom: {
+                            wheel: { enabled: true, mode: "x" },
+                            pinch: { enabled: true, mode: "x" },
+                            onZoomStart: function({ event }) {
+                                // block pinch zoom if gesture is more vertical than horizontal
+                                if (event && event.pointers && event.pointers.length === 2) {
+                                    const dx = Math.abs(event.pointers[0].clientX - event.pointers[1].clientX);
+                                    const dy = Math.abs(event.pointers[0].clientY - event.pointers[1].clientY);
+                                    if (dy > dx) return false;
+                                }
+                            },
+                            onZoom: function() { fitYToVisible(); chart.update("none"); }
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: "x",
+                            onPan: function() {
+                                if (!chart._panRafPending) {
+                                    chart._panRafPending = true;
+                                    requestAnimationFrame(function() {
+                                        chart._panRafPending = false;
+                                        const yChanged = fitYToVisible();
+                                        updateTooltipAtMouse();
+                                        if (yChanged) { chart.update("none"); } else { chart.draw(); }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                },
+                elements: { point: { radius: 0 } },
+                scales: {
+                    x: {
+                        min: allDates[isMobile ? mobileStartIndex : startIndex],
+                        max: allDates[allDates.length - 1],
+                        offset: false,
+                        grid: { display: false },
+                        ticks: {
+                            font: { family: "Inter", size: 11 },
+                            color: "#666",
+                            maxTicksLimit: window.innerWidth <= 480 ? 3 : 5,
+                            maxRotation: 0,
+                            autoSkip: true,
+                            autoSkipPadding: 16
+                        },
+                        title: { display: false }
+                    },
+                    y: {
+                        position: "right",
+                        grid: { display: false },
+                        afterFit: function(scale) { scale.width = isMobile ? 44 : 64; },
+                        ticks: {
+                            font: { family: "Inter", size: isMobile ? 10 : 11 },
+                            color: "#666",
+                            maxTicksLimit: isMobile ? 4 : 6,
+                            callback: function(val) {
+                                if (val >= 1000) return "€" + (val / 1000).toFixed(0) + "k";
+                                return "€" + val.toFixed(0);
+                            }
+                        },
+                        title: { display: false }
+                    }
+                }
+            },
+            plugins: [movingGridPlugin, crosshairPlugin]
+        });
+
+        // auto-fit Y axis to the data currently visible on X axis
+        function fitYToVisible() {
+            const xScale = chart.scales.x;
+            const iMin = Math.max(0, Math.floor(xScale.min) - 1);
+            const iMax = Math.min(allDates.length - 1, Math.ceil(xScale.max) + 1);
+            let visMin = Infinity, visMax = -Infinity;
+            chart.data.datasets.forEach(function(ds, di) {
+                const meta = chart.getDatasetMeta(di);
+                if (meta.hidden) return;
+                for (let i = iMin; i <= iMax; i++) {
+                    const v = ds.data[i];
+                    if (v < visMin) visMin = v;
+                    if (v > visMax) visMax = v;
+                }
+            });
+            if (visMin === Infinity) return false;
+            const p = (visMax - visMin) * 0.08;
+            const newMin = visMin - p;
+            const newMax = visMax + p;
+            const changed = Math.abs(newMin - (chart.options.scales.y.min || 0)) > 1 ||
+                            Math.abs(newMax - (chart.options.scales.y.max || 0)) > 1;
+            chart.options.scales.y.min = newMin;
+            chart.options.scales.y.max = newMax;
+            return changed;
+        }
+
+        // update tooltip at current mouse position (used during pan drag)
+        function updateTooltipAtMouse() {
+            if (mouseClientX === null || !chart.chartArea) return;
+            const rect = canvasEl.getBoundingClientRect();
+            const x = mouseClientX - rect.left;
+            if (x < chart.chartArea.left || x > chart.chartArea.right) return;
+            // map pixel x to the nearest data index using the x scale directly (fast)
+            const xScale = chart.scales.x;
+            const dataX = xScale.getValueForPixel(x);
+            const index = Math.round(dataX);
+            if (index < 0 || index >= allDates.length) return;
+            chart.tooltip.setActiveElements(
+                chart.data.datasets.map((_, i) => ({ datasetIndex: i, index: index })),
+                { x: x, y: rect.height / 2 }
+            );
+        }
+
+        // track real mouse position for crosshair and tooltip during drag
+        const canvasEl = document.getElementById("chart");
+        canvasEl.addEventListener("mousemove", function(e) {
+            mouseClientX = e.clientX;
+            chart.draw();
+        });
+        canvasEl.addEventListener("mouseleave", function() {
+            mouseClientX = null;
+            chart.tooltip.setActiveElements([], {});
+            chart.draw();
+        });
+
+        // touch crosshair: activates after 400ms hold, stays until tap elsewhere
+        let touchHoldTimer = null;
+        let touchCrosshairActive = false;
+
+        canvasEl.addEventListener("touchstart", function(e) {
+            if (e.touches.length !== 1) return;
+            // if crosshair is already showing, dismiss it on tap
+            if (touchCrosshairActive) {
+                touchCrosshairActive = false;
+                mouseClientX = null;
+                chart.tooltip.setActiveElements([], {});
+                chart.draw();
+                return;
+            }
+            const clientX = e.touches[0].clientX;
+            touchHoldTimer = setTimeout(function() {
+                touchCrosshairActive = true;
+                mouseClientX = clientX;
+                updateTooltipAtMouse();
+                chart.draw();
+            }, 600);
+        }, { passive: true });
+
+        canvasEl.addEventListener("touchmove", function(e) {
+            if (e.touches.length !== 1) {
+                clearTimeout(touchHoldTimer);
+                return;
+            }
+            // if moved significantly before hold fires, cancel the hold
+            if (!touchCrosshairActive) {
+                clearTimeout(touchHoldTimer);
+                return;
+            }
+            mouseClientX = e.touches[0].clientX;
+            updateTooltipAtMouse();
+            chart.draw();
+        }, { passive: true });
+
+        canvasEl.addEventListener("touchend", function() {
+            clearTimeout(touchHoldTimer);
+            // do NOT clear crosshair — it stays until user taps elsewhere
+        }, { passive: true });
+
+        canvasEl.addEventListener("touchcancel", function() {
+            clearTimeout(touchHoldTimer);
+            touchCrosshairActive = false;
+            mouseClientX = null;
+            chart.tooltip.setActiveElements([], {});
+            chart.draw();
+        }, { passive: true });
+
+        // clear crosshair when tapping outside the canvas
+        document.addEventListener("touchstart", function(e) {
+            if (touchCrosshairActive && !canvasEl.contains(e.target)) {
+                touchCrosshairActive = false;
+                mouseClientX = null;
+                chart.tooltip.setActiveElements([], {});
+                chart.draw();
+            }
+        }, { passive: true });
+
+        // build HTML legend
+        const legendEl = document.getElementById("chartLegend");
+        chart.data.datasets.forEach(function(ds, i) {
+            const item = document.createElement("div");
+            item.className = "legend-item";
+            item.dataset.index = i;
+            item.innerHTML = '<div class="legend-dot" style="border-color:' + ds.borderColor + '"></div>' + ds.label;
+            item.addEventListener("click", function() {
+                const meta = chart.getDatasetMeta(i);
+                const ds = chart.data.datasets[i];
+                const origColor = i === 0 ? "#1a73e8" : "#e8710a";
+                const origHex = origColor.slice(1);
+                const r = parseInt(origHex.slice(0,2),16);
+                const g = parseInt(origHex.slice(2,4),16);
+                const b = parseInt(origHex.slice(4,6),16);
+                if (!meta.hidden) {
+                    item.classList.add("hidden");
+                    let op = 1;
+                    const fadeOut = setInterval(function() {
+                        op = Math.max(0, op - 0.1);
+                        ds.borderColor = "rgba(" + r + "," + g + "," + b + "," + op.toFixed(2) + ")";
+                        chart.update("none");
+                        if (op <= 0) {
+                            clearInterval(fadeOut);
+                            meta.hidden = true;
+                            fitYToVisible();
+                            chart.update("none");
+                        }
+                    }, 16);
+                } else {
+                    meta.hidden = false;
+                    item.classList.remove("hidden");
+                    let op = 0;
+                    const fadeIn = setInterval(function() {
+                        op = Math.min(1, op + 0.1);
+                        ds.borderColor = "rgba(" + r + "," + g + "," + b + "," + op.toFixed(2) + ")";
+                        chart.update("none");
+                        if (op >= 1) {
+                            clearInterval(fadeIn);
+                            ds.borderColor = origColor;
+                            fitYToVisible();
+                            chart.update("none");
+                        }
+                    }, 16);
+                }
+            });
+            legendEl.appendChild(item);
+        });
+
+        // fit Y to initial visible range after chart fully renders
+        fitYToVisible();
+        chart.update("none");
+
+        function fitYForRange(iMin, iMax) {
+            let visMin = Infinity, visMax = -Infinity;
+            chart.data.datasets.forEach(function(ds, di) {
+                const meta = chart.getDatasetMeta(di);
+                if (meta.hidden) return;
+                const lo = Math.max(0, iMin - 1);
+                const hi = Math.min(ds.data.length - 1, iMax + 1);
+                for (let i = lo; i <= hi; i++) {
+                    const v = ds.data[i];
+                    if (v < visMin) visMin = v;
+                    if (v > visMax) visMax = v;
+                }
+            });
+            if (visMin === Infinity) return;
+            const p = (visMax - visMin) * 0.08;
+            chart.options.scales.y.min = visMin - p;
+            chart.options.scales.y.max = visMax + p;
+        }
+
+        function resetZoom() {
+            const targetStart = isMobile ? mobileStartIndex : startIndex;
+            chart.options.scales.x.min = allDates[targetStart];
+            chart.options.scales.x.max = allDates[allDates.length - 1];
+            fitYForRange(targetStart, allDates.length - 1);
+            chart.options.animation = { duration: 500, easing: "easeInOutQuart" };
+            chart.update();
+            setTimeout(function() { chart.options.animation = false; }, 550);
+        }
+
+        function toggleFullscreen() {
+            const card = document.getElementById("chartCard");
+            if (!document.fullscreenElement) {
+                card.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // on mobile (phone only), tap chart card to open fullscreen
+        const chartCard = document.getElementById("chartCard");
+        chartCard.addEventListener("click", function(e) {
+            if (window.innerWidth <= 480 && !document.fullscreenElement) {
+                toggleFullscreen();
+            }
+        });
+
+        // resize handler to fix chart after fast resizing
+        let resizeTimer;
+        window.addEventListener("resize", function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() { chart.resize(); }, 100);
+        });
+    </script>
+</body>
+</html>
