@@ -438,27 +438,41 @@
 
         <!-- SETTINGS PAGE -->
         <div class="page" id="page-settings">
-            <h1>Settings</h1>
-            <p style="color: #888; margin-top: 4px; margin-bottom: 32px;">Application settings</p>
-            <div class="card" style="max-width: 480px;">
-                <div class="card-label">Trading 212 Credentials</div>
-                <form method="POST" action="/settings" style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px;">
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 600; color: #888;">API Key</label>
-                        <input type="text" name="api_key" id="apiKeyInput" placeholder="Paste your API key"
-                            style="padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-family: Inter, sans-serif; font-size: 14px; color: #1f1f1f; outline: none; width: 100%;">
+            <div style="max-width: 600px;">
+
+                <h2 style="font-size: 22px; font-weight: 700; color: #1f1f1f; margin-bottom: 24px;">Trading 212</h2>
+
+                <form method="POST" action="/settings" id="settingsForm">
+                    <!-- API Key row -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid #f0f0f0;">
+                        <div>
+                            <div style="font-size: 15px; font-weight: 500; color: #1f1f1f;">API Key</div>
+                            <div style="font-size: 13px; color: #888; margin-top: 3px;">Your Trading 212 public API key</div>
+                        </div>
+                        <input type="text" name="api_key" id="apiKeyInput" placeholder="Paste key"
+                            style="width: 220px; padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-family: Inter, sans-serif; font-size: 13px; color: #1f1f1f; outline: none; background: #fafafa;">
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 600; color: #888;">API Secret</label>
-                        <input type="password" name="api_secret" id="apiSecretInput" placeholder="Paste your API secret"
-                            style="padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-family: Inter, sans-serif; font-size: 14px; color: #1f1f1f; outline: none; width: 100%;">
+
+                    <!-- API Secret row -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid #f0f0f0;">
+                        <div>
+                            <div style="font-size: 15px; font-weight: 500; color: #1f1f1f;">API Secret</div>
+                            <div style="font-size: 13px; color: #888; margin-top: 3px;">Shown only once when generated</div>
+                        </div>
+                        <input type="password" name="api_secret" id="apiSecretInput" placeholder="Paste secret"
+                            style="width: 220px; padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-family: Inter, sans-serif; font-size: 13px; color: #1f1f1f; outline: none; background: #fafafa;">
                     </div>
-                    <button type="submit"
-                        style="padding: 10px 20px; background: #1a73e8; color: #fff; border: none; border-radius: 8px; font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; align-self: flex-start;">
-                        Save
-                    </button>
+
+                    <!-- Save row -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 0;">
+                        <p id="saveMsg" style="font-size: 13px; color: #888; margin: 0;"></p>
+                        <button type="submit"
+                            style="padding: 9px 22px; background: #1a73e8; color: #fff; border: none; border-radius: 8px; font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;">
+                            Save
+                        </button>
+                    </div>
                 </form>
-                <p id="saveMsg" style="margin-top: 10px; font-size: 13px; color: #888;"></p>
+
             </div>
         </div>
 
@@ -942,7 +956,7 @@
         });
 
         // settings form — save without page reload
-        const settingsForm = document.querySelector("#page-settings form");
+        const settingsForm = document.getElementById("settingsForm");
         if (settingsForm) {
             settingsForm.addEventListener("submit", function(e) {
                 e.preventDefault();
